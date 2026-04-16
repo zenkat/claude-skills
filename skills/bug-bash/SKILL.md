@@ -35,7 +35,18 @@ git add <files> && git commit -m "style: prettier formatting from remote main"
 
 Read `BUGS.md`. Take the **first item that is not marked `[FIXED IN PRxx]`**. If the user specifies a bug, use that instead.
 
-### 3. Create a GitHub issue
+### 3. Check for in-flight work
+
+Before claiming the bug, verify it isn't already being worked on:
+
+```sh
+gh issue list --state open
+gh pr list --state open
+```
+
+If an open issue or PR already covers this bug, skip it and pick the next one. The issue is the canonical "claimed" signal — it exists before a branch is made, so checking issues catches the full window. This prevents two people from picking up the same bug when BUGS.md on `main` hasn't been updated yet (because the fix is still in a feature branch).
+
+### 4. Create a GitHub issue
 
 ```sh
 gh issue create --title "..." --body "..."
@@ -45,7 +56,7 @@ Body should include: Description, Expected behavior, Actual behavior, Steps to r
 
 Note the issue number — you'll use it throughout.
 
-### 4. Create a branch
+### 5. Create a branch
 
 ```sh
 git checkout -b fix/<short-description>
@@ -53,7 +64,7 @@ git checkout -b fix/<short-description>
 
 Branch naming: `fix/` prefix, lowercase, hyphen-separated. Example: `fix/onboarding-cache-clear`.
 
-### 5. Diagnose before coding
+### 6. Diagnose before coding
 
 **Read the relevant source files first.** Check git history to see if the bug was already fixed:
 
@@ -66,7 +77,7 @@ If it was already fixed, verify with a smoke test, then close the issue and move
 
 If it needs a fix, understand the root cause fully before writing any code.
 
-### 6. Post diagnosis to GitHub issue
+### 7. Post diagnosis to GitHub issue
 
 Before writing any code, post your diagnosis as a comment on the issue:
 
@@ -76,7 +87,7 @@ gh issue comment <N> --body "## Diagnosis\n\n..."
 
 Include: root cause, affected file(s) and line numbers, proposed fix approach.
 
-### 7. Check BUGS.md for related issues
+### 8. Check BUGS.md for related issues
 
 Scan the remaining open items in `BUGS.md`. If any share the same root cause as the bug you just diagnosed:
 
@@ -90,13 +101,17 @@ gh issue edit <N> --title "..." --body "..."
 
 This way all related bugs are tracked together and fixed atomically rather than discovered after the fact.
 
-### 8. Fix the bug(s)
+### 9. Fix the bug(s)
 
-Make the minimum change needed. Do not add features, refactor surrounding code, or add speculative abstractions. Fix the specific bug.
+Make the minimum change needed. Follow all CLAUDE.md conventions:
+- No `as any`, no `@ts-ignore`
+- Types go in `src/types/index.ts`
+- Mock data must match types
+- No speculative abstractions
 
 Iterate with the user as needed.
 
-### 9. Write a Playwright smoke test
+### 10. Write a Playwright smoke test
 
 **All tests go in `tests/playwright/`** — never in `/tmp` or anywhere else.
 
@@ -105,10 +120,15 @@ Each test file should:
 - Include a docstring with description, usage, and install instructions
 - Use `python3 -m playwright install chromium` (not the bare `playwright` command)
 - Be self-contained and runnable independently
+- Assume the dev server is running at `http://localhost:5173`
 
-After writing the test, add a row to the test table in the project's developer documentation.
+After writing the test, add a row to the test table in `docs/DEVELOPER_BRIEF.md`:
 
-### 10. Confirm the fix
+```markdown
+| `test_<name>.py` | What it covers |
+```
+
+### 11. Confirm the fix
 
 Run the smoke test:
 
@@ -118,39 +138,35 @@ python3 tests/playwright/<test_file>.py
 
 All checks must pass before proceeding.
 
-### 11. Lint and build
+### 12. Lint and build
 
-Both must be clean before committing. Run whatever lint and build commands the project uses (e.g. `npm run format && npm run build`).
+Both must be clean before committing:
 
-### 12. Commit
+```sh
+npm run format && npm run build
+```
+
+The chunk size warning is expected — ignore it.
+
+### 13. Commit
 
 ```sh
 git add <specific files>
-git commit -m "fix: <description>
-
-Closes #<N>
-
-Co-Authored-By: ..."
+git commit -m "fix: <description>\n\nCloses #<N>\n\nCo-Authored-By: ..."
 ```
 
 Use conventional commit format: `fix:`, `feat:`, `docs:`, `refactor:`, `style:`.
 Always include `Closes #<issue-number>` in the commit body.
 
-### 13. Update BUGS.md
+### 14. Update BUGS.md
 
-Mark fixed items inline — **do not move them to a separate section**.
+Mark the fixed item(s) inline — **do not move them to a separate section**:
 
-For bugs that required a code fix:
 ```markdown
 - [FIXED IN PR#<N>] ~~original bug description~~
 ```
 
-For bugs that were investigated and found to already be working:
-```markdown
-- [CANNOT REPRODUCE #<N>] original bug description
-```
-
-The `[FIXED IN PR#N]` / `[CANNOT REPRODUCE #N]` tag is NOT struck through. For fixed bugs, only the description gets strikethrough.
+The `[FIXED IN PR#N]` tag is NOT struck through — only the description is.
 
 Commit this change:
 
@@ -158,7 +174,7 @@ Commit this change:
 git add BUGS.md && git commit -m "docs: mark bug(s) fixed in PR#<M>"
 ```
 
-### 14. Push and file PR
+### 15. Push and file PR
 
 ```sh
 git push -u origin fix/<branch-name>
@@ -189,8 +205,17 @@ Closes #<N>
 - **Always check git history before assuming the bug is unfixed**
 - **Scan for related bugs right after diagnosis** — bundle them into the same issue and branch
 - **Tests always go in `tests/playwright/`** — never `/tmp` or anywhere else
-- **BUGS.md uses inline markers** — `[FIXED IN PR#N] ~~description~~` for fixed bugs, `[CANNOT REPRODUCE #N]` (no strikethrough) for bugs that were already working
+- **BUGS.md uses inline strikethrough** — `[FIXED IN PR#N] ~~description~~` — not a separate Fixed section
 - **Branch off main** — never off another feature branch
 - **One branch per bug** (or per tightly related cluster of bugs with the same root cause)
+- **The `bugfix-workflow` branch** is a meta-branch for developing this skill — it is not a bug fix branch
 - **Push only when creating a PR** — commit locally otherwise
 - **Playwright install**: `python3 -m playwright install chromium` (the bare `playwright` command may not be on PATH)
+
+## Project-specific notes (BeFriend app)
+
+- Dev server: `npm run dev` at `http://localhost:5173`
+- Mock mode: `VITE_USE_MOCK=true` in `.env` (currently `false` — real Supabase)
+- Tests allowed without prompting: `python3 tests/playwright/*` (set in `.claude/settings.json`)
+- Playwright test table lives in `docs/DEVELOPER_BRIEF.md` under "UI Smoke Tests (Playwright)"
+- `BUGS.md` is in the project root

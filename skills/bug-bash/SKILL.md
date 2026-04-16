@@ -212,6 +212,30 @@ Closes #<N>
 - **Push only when creating a PR** — commit locally otherwise
 - **Playwright install**: `python3 -m playwright install chromium` (the bare `playwright` command may not be on PATH)
 
+## Keeping changes on the right branch
+
+Every change must live on the branch whose bug caused it. This is easy to violate when multiple branches are open at once.
+
+**Rule:** If fixing bug A requires updating shared files (types, mock data, tests), those changes go on bug A's branch — not on whichever branch happens to be checked out.
+
+**Before committing, ask:** Does every file in this diff belong to this bug? If a change was necessitated by a different bug's root cause, move it:
+
+1. Add it to the correct branch:
+   ```sh
+   git checkout fix/<correct-branch>
+   # make the change, commit
+   ```
+2. Remove it from the wrong branch:
+   ```sh
+   git checkout fix/<wrong-branch>
+   git revert <commit-hash> --no-edit
+   git push
+   ```
+
+**Common mistake:** Discovering that mock data or types are wrong while working on bug B, fixing them on bug B's branch — but the real cause is bug A. The fix belongs in bug A's PR so reviewers see the full, coherent change.
+
+**After reverting:** verify with `git diff main...<branch> --stat` that the branch only touches files relevant to its bug.
+
 ## Project-specific notes (BeFriend app)
 
 - Dev server: `npm run dev` at `http://localhost:5173`

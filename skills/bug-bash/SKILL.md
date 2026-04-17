@@ -20,7 +20,11 @@ Work through bugs in `BUGS.md` one at a time. Each bug gets:
 
 ## Step-by-step workflow
 
-### 1. Start clean
+### 1. Compress and start clean
+
+Run `/compact` to compress the conversation context before starting.
+
+Then:
 
 ```sh
 git checkout main && git pull && npm install
@@ -52,7 +56,11 @@ If an open issue or PR already covers this bug, skip it and pick the next one. T
 gh issue create --title "..." --body "..."
 ```
 
-Body should include: Description, Expected behavior, Actual behavior, Steps to reproduce.
+Body should include: Description, Expected behavior, Actual behavior, Steps to reproduce. The last line of the body must be the original verbatim text from `BUGS.md`, labeled:
+
+```
+**Original report:** <exact text from BUGS.md>
+```
 
 Note the issue number — you'll use it throughout.
 

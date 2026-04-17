@@ -1,0 +1,24 @@
+{
+  "name": "zenkat-claude-skills",
+  "id": "zenkat-claude-skills",
+  "owner": {
+    "name": "zenkat"
+  },
+  "metadata": {
+    "description": "Workflow skills for Claude Code: bug-bash and more",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "zenkat-claude-skills",
+      "source": "./",
+      "description": "Workflow skills including bug-bash (structured bug fixing workflow with GitHub issues, branches, smoke tests, and PRs)",
+      "version": "1.0.0",
+      "author": {
+        "name": "zenkat"
+      },
+      "keywords": ["workflow", "bug-bash", "testing"],
+      "category": "workflow"
+    }
+  ]
+}

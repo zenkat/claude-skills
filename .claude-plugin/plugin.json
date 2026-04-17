@@ -7,5 +7,5 @@
   },
   "license": "MIT",
   "keywords": ["workflow", "bug-bash", "testing"],
-  "skills": ["./skills/bug-bash"]
+  "skills": ["./skills/bug-bash", "./skills/pr-review"]
 }

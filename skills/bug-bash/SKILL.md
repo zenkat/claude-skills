@@ -52,8 +52,13 @@ If an open issue or PR already covers this bug, skip it and pick the next one. T
 
 ### 4. Create a GitHub issue
 
+Always write the body to a temp file and pass it with `--body-file` — never use `--body "..."` for multi-line content. Backticks and special characters in inline `--body` strings are interpreted by the shell, corrupting the output.
+
 ```sh
-gh issue create --title "..." --body "..."
+cat > /tmp/gh_body.md << 'EOF'
+...body content...
+EOF
+gh issue create --title "..." --body-file /tmp/gh_body.md
 ```
 
 Body should include: Description, Expected behavior, Actual behavior, Steps to reproduce. The last line of the body must be the original verbatim text from `BUGS.md`, labeled:
@@ -87,10 +92,15 @@ If it needs a fix, understand the root cause fully before writing any code.
 
 ### 7. Post diagnosis to GitHub issue
 
-Before writing any code, post your diagnosis as a comment on the issue:
+Before writing any code, post your diagnosis as a comment on the issue. Write the body to a temp file:
 
 ```sh
-gh issue comment <N> --body "## Diagnosis\n\n..."
+cat > /tmp/gh_body.md << 'EOF'
+## Diagnosis
+
+...diagnosis content...
+EOF
+gh issue comment <N> --body-file /tmp/gh_body.md
 ```
 
 Include: root cause, affected file(s) and line numbers, proposed fix approach.
@@ -104,7 +114,10 @@ Use the Agent tool with `model: "haiku"` to scan the remaining open items in `BU
 - Fix them all in this branch
 
 ```sh
-gh issue edit <N> --title "..." --body "..."
+cat > /tmp/gh_body.md << 'EOF'
+...updated body...
+EOF
+gh issue edit <N> --title "..." --body-file /tmp/gh_body.md
 ```
 
 This way all related bugs are tracked together and fixed atomically rather than discovered after the fact.
@@ -187,7 +200,10 @@ git add BUGS.md && git commit -m "docs: mark bug(s) fixed in PR#<M>"
 ```sh
 git push -u origin fix/<branch-name>
 
-gh pr create --title "fix: ..." --body "..."
+cat > /tmp/gh_body.md << 'EOF'
+...PR body...
+EOF
+gh pr create --title "fix: ..." --body-file /tmp/gh_body.md
 ```
 
 PR body template:

@@ -33,11 +33,11 @@ git add <files> && git commit -m "style: prettier formatting from remote main"
 
 ### 2. Pick the next bug
 
-Read `BUGS.md`. Take the **first item that is not marked `[FIXED IN PRxx]`**. If the user specifies a bug, use that instead.
+Use the Agent tool with `model: "haiku"` to read `BUGS.md` and return the first item not marked `[FIXED IN PRxx]` or `[CANNOT REPRODUCE #N]`. If the user specifies a bug, use that instead.
 
 ### 3. Check for in-flight work
 
-Before claiming the bug, verify it isn't already being worked on:
+Use the Agent tool with `model: "haiku"` to run the following and return whether any open issue or PR already covers this bug:
 
 ```sh
 gh issue list --state open
@@ -89,7 +89,7 @@ Include: root cause, affected file(s) and line numbers, proposed fix approach.
 
 ### 8. Check BUGS.md for related issues
 
-Scan the remaining open items in `BUGS.md`. If any share the same root cause as the bug you just diagnosed:
+Use the Agent tool with `model: "haiku"` to scan the remaining open items in `BUGS.md` and return any that share the same root cause as the bug you just diagnosed. If any do:
 
 - Update the GitHub issue title and body to reflect the broader scope
 - List the related bugs explicitly in the issue

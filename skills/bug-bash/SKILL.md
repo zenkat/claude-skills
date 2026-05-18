@@ -71,9 +71,20 @@ Note the issue number — you'll use it throughout.
 
 ### 5. Create a branch
 
+Before branching, check whether any open PRs touch the same files you are about to modify:
+
 ```sh
+gh pr list --state open
+```
+
+If another open PR modifies the same file(s), **stop and wait for it to merge** before creating this branch. Never borrow file content from an unmerged branch — always let it land on `main` first, then pull.
+
+```sh
+git checkout main && git pull
 git checkout -b fix/<short-description>
 ```
+
+The `git pull` must happen immediately before `git checkout -b` — not earlier in the session. Open PRs can merge at any time and stale local `main` is the #1 cause of merge conflicts.
 
 Branch naming: `fix/` prefix, lowercase, hyphen-separated. Example: `fix/onboarding-cache-clear`.
 
@@ -159,15 +170,31 @@ python3 tests/playwright/<test_file>.py
 
 All checks must pass before proceeding.
 
-### 12. Lint and build
+### 12. Lint, build, and test
 
-Both must be clean before committing:
+All must be clean before committing:
 
 ```sh
-npm run format && npm run build
+npm run format && npm run build && npm test
 ```
 
 The chunk size warning is expected — ignore it.
+
+If the PR adds files in `scripts/` (CLI scripts not covered by `tsconfig.app.json`), type-check them separately:
+
+```sh
+npx tsc --noEmit --target ES2020 --module ESNext --moduleResolution bundler --skipLibCheck --strict scripts/<file>.ts
+```
+
+Also run the full Playwright suite to check for regressions:
+
+```sh
+bash scripts/run-playwright-tests.sh
+```
+
+This runs all tests in parallel — do not use a `for` loop.
+
+Any test that was passing on `main` must still pass. If a test is now failing that wasn't before, investigate and fix before committing. If tests were already failing on `main` before you started, confirm this explicitly by checking out main, running those specific tests, and verifying the same failures reproduce — then document them as pre-existing in your commit message or PR body.
 
 ### 13. Commit
 
@@ -217,7 +244,8 @@ Closes #<N>
 
 ## Test plan
 
-- [ ] `python3 tests/playwright/<test>.py` passes
+- [ ] `npm test` passes (Vitest unit tests)
+- [ ] `bash scripts/run-playwright-tests.sh` passes (all Playwright smoke tests)
 - [ ] <manual check if needed>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -230,7 +258,8 @@ Closes #<N>
 - **Scan for related bugs right after diagnosis** — bundle them into the same issue and branch
 - **Tests always go in `tests/playwright/`** — never `/tmp` or anywhere else
 - **BUGS.md uses inline strikethrough** — `[FIXED IN PR#N] ~~description~~` — not a separate Fixed section
-- **Branch off main** — never off another feature branch
+- **Branch off main** — never off another feature branch, and always `git pull` immediately before `git checkout -b`, not earlier in the session
+- **Check open PRs before branching** — `gh pr list --state open`; if another open PR touches the same files, wait for it to merge first. Never copy file content from an unmerged branch.
 - **One branch per bug** (or per tightly related cluster of bugs with the same root cause)
 - **The `bugfix-workflow` branch** is a meta-branch for developing this skill — it is not a bug fix branch
 - **Push only when creating a PR** — commit locally otherwise

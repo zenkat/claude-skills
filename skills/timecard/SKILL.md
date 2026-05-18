@@ -53,8 +53,18 @@ The active session is stored at `~/.claude/timecard_active.json`. The schema is:
 3. Get the stop time: run `date '+%Y-%m-%dT%H:%M:%S'` and `date '+%Y-%m-%d %H:%M:%S'`.
 4. Calculate elapsed time in hours and minutes (see Duration section below).
 5. Write the worklog entry (see Worklog entry section below).
-6. Delete `~/.claude/timecard_active.json`.
-7. Confirm: "Session closed. Duration: [Xh Ym]. Worklog written to [filename]."
+6. Commit and push the worklog to `main` — **not the current branch**:
+   ```sh
+   git stash        # if there are uncommitted changes on the current branch
+   git checkout main && git pull
+   git add worklog/<filename>
+   git commit -m "docs: add session worklog <YYYY-MM-DD>"
+   git push origin main
+   git checkout -   # return to previous branch
+   git stash pop    # restore stashed changes if any
+   ```
+7. Delete `~/.claude/timecard_active.json`.
+8. Confirm: "Session closed. Duration: [Xh Ym]. Worklog written to [filename]."
 
 ---
 

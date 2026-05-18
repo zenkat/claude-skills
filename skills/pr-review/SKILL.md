@@ -30,12 +30,21 @@ An unpushed main commit becomes part of the PR's diff if you branch before pushi
 
 ### 2. Read all comments
 
-Pull both top-level review comments and inline file comments:
+Pull both top-level review comments and inline file comments, **including the author of each comment**:
 
 ```sh
 gh pr view <N> --comments
-gh api repos/<owner>/<repo>/pulls/<N>/comments --jq '.[] | {id, path, line, body, diff_hunk}'
+gh api repos/<owner>/<repo>/pulls/<N>/comments --jq '.[] | {id, path, line, body, diff_hunk, user: .user.login}'
 ```
+
+**Always check who wrote each comment before categorizing it.** The two accounts on this project are:
+
+| Login | Person | Role |
+|---|---|---|
+| `zenkat` | Brian | The developer running this session — his comments are direct instructions or concerns, not external review |
+| `befriend-dev` | Janine | The product owner/partner — her comments reflect product goals and user-facing requirements |
+
+Do not conflate them. A comment from `zenkat` is from the person you are talking to right now. A comment from `befriend-dev` is from Janine. The tone and weight of the response differs: Brian's comments may need immediate action in this session; Janine's may need product clarification or async dialog.
 
 Also check the PR's current diff to understand exactly what the reviewer sees:
 
@@ -95,22 +104,45 @@ Push:
 git push origin <branch>
 ```
 
-### 6. Resolve each comment
+### 6. Reply to each comment inline — BEFORE pushing
 
-For comments that required code changes, reply inline confirming what was done. For comments resolved by discussion (no code change needed), a reply explaining the resolution is sufficient — not every comment requires a code change.
+**Reply to every inline comment before making any code changes.** Once you push a commit that modifies the commented lines, GitHub marks those comments "Outdated" and the inline reply API returns 404. You will not be able to reply in-thread after that.
 
 ```sh
 cat > /tmp/gh_body.md << 'EOF'
-...confirmation or explanation...
+...your reply...
 EOF
 gh api repos/<owner>/<repo>/pulls/comments/<comment_id>/replies -f body="$(cat /tmp/gh_body.md)"
 ```
 
+For comments where you agree and the fix is straightforward, a brief reply is fine: "Fixed in the next commit — [description of what changed]."
+
+For comments still under discussion, reply with your position and wait for the reviewer before touching code.
+
+**Only after all inline replies are posted**: implement the fixes, commit, and push.
+
+### 7. Resolve each comment
+
+Post a single top-level PR comment summarizing what was done — one section per review comment addressed.
+
+```sh
+cat > /tmp/gh_body.md << 'EOF'
+## Review addressed
+
+**Comment: <short description>** — <what was done>
+
+**Comment: <short description>** — <what was done>
+EOF
+gh pr comment <N> --body-file /tmp/gh_body.md
+```
+
+**When inline replies return 404:** This happens if comments went Outdated before you could reply (e.g. a commit was pushed to the branch between when comments were posted and when you started the review). Fall back to `gh pr comment` with a structured summary organized by comment. Note at the top that comments went Outdated and inline replies weren't possible.
+
 ## Key conventions
 
 - **Read all comments before responding to any** — batch your understanding, then engage
+- **Reply inline before pushing** — post inline replies to every comment BEFORE making any code changes; pushing first causes comments to go Outdated and the reply API to return 404
 - **Dialog before code** — never implement a disputed change before reaching agreement
-- **Inline replies only** — respond on the specific comment thread, not as a new top-level comment
 - **Not every comment requires a code change** — explanation is a valid and complete resolution
 - **Always use `--body-file`** for any `gh` command with multi-line content
 - **Verify clean main before starting** — `git log origin/main..main` must be empty

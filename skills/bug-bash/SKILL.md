@@ -37,7 +37,30 @@ git add <files> && git commit -m "style: prettier formatting from remote main"
 
 ### 2. Pick the next bug
 
-Use the Agent tool with `model: "haiku"` to read `BUGS.md` and return the first item not marked `[FIXED IN PRxx]` or `[CANNOT REPRODUCE #N]`. If the user specifies a bug, use that instead.
+First, detect who is running the session:
+
+```sh
+gh api user --jq '.login'
+```
+
+| Login | Person | Bug preference |
+|---|---|---|
+| `zenkat` | Brian | Backend / DB bugs first |
+| `BeFriendDev` | Janine | UX / frontend bugs first |
+
+**Classifying bugs:**
+- **UX / frontend** — items under any "UX / Copy" subsection; visual issues; navigation issues; copy/text fixes; component bugs that don't require schema or migration changes
+- **Backend / DB** — Pre-Launch Blockers section; anything mentioning migrations, RLS, Edge Functions, schema columns, FK constraints, or DB-layer changes
+
+**Selection rules:**
+
+- If the user specifies a bug, use that — no preference filtering applies.
+- If no bug is specified, scan `BUGS.md` for open items (not marked `[FIXED IN PRxx]` or `[CANNOT REPRODUCE #N]`) and apply the caller's preference: surface the first bug matching their preferred type. If none of the preferred type remain, fall through to the other type.
+- **Exception — Janine with only backend bugs remaining:** if the caller is `BeFriendDev` and every remaining open bug is backend / DB, show this warning before proceeding:
+
+  > ⚠️ The remaining open bugs are all backend / DB changes — Brian should probably take these. Want to pick one anyway? (yes / skip)
+
+  If she says **skip**, close out with "Nothing left for Janine to take right now." If she says **yes**, proceed with the first available bug regardless of type.
 
 ### 3. Check for in-flight work
 
@@ -151,8 +174,10 @@ Each test file should:
 - Have a descriptive name (`test_<what_it_tests>.py`)
 - Include a docstring with description, usage, and install instructions
 - Use `python3 -m playwright install chromium` (not the bare `playwright` command)
-- Be self-contained and runnable independently
-- Assume the dev server is running at `http://localhost:5173`
+- Be self-contained and runnable independently — spin up its own Vite dev server on a unique port rather than assuming one is already running
+- Start the server with `VITE_USE_MOCK=true` and **`--strictPort`** — without `--strictPort`, Vite silently moves to the next port when the target is occupied, causing the test to hit a stale server and fail with misleading results
+- Pick a port not used by any other test (check `grep -r "^PORT" tests/playwright/` to see what's taken)
+- Follow the pattern in `test_inapp_banner.py`: `subprocess.Popen`, `wait_for_server()`, `try/finally` to terminate
 
 After writing the test, add a row to the test table in `docs/DEVELOPER_BRIEF.md`:
 
